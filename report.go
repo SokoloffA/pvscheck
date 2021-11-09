@@ -1,4 +1,4 @@
-package engine
+package main
 
 import (
 	"bufio"
@@ -15,25 +15,16 @@ type ReportInfo struct {
 	errs    int
 }
 
-func (rep ReportInfo) Print() {
-	fmt.Println("**************************")
-	fmt.Printf("* The %s file was created\n", rep.outFile)
-	fmt.Println("*")
-	fmt.Println("* Ошибок:         ", rep.errs)
-	fmt.Println("* Предупреждений: ", rep.warns)
-	fmt.Println("* Уведомлений:    ", rep.notes)
-}
+func saveReport(inFile, outFile string) (ReportInfo, error) {
+	res := ReportInfo{outFile: outFile}
 
-func (e Engine) BuildReport() (ReportInfo, error) {
-	res := ReportInfo{outFile: e.OutFile}
-
-	in, err := os.Open(e.TasksFile)
+	in, err := os.Open(inFile)
 	if err != nil {
 		return res, err
 	}
 	defer in.Close()
 
-	out, err := os.Create(e.OutFile)
+	out, err := os.Create(outFile)
 	if err != nil {
 		return res, err
 	}
@@ -76,4 +67,13 @@ func (e Engine) BuildReport() (ReportInfo, error) {
 	}
 
 	return res, nil
+}
+
+func (rep ReportInfo) print() {
+	fmt.Println("**************************")
+	fmt.Printf("* The %s file was created\n", rep.outFile)
+	fmt.Println("*")
+	fmt.Println("* Ошибок:         ", rep.errs)
+	fmt.Println("* Предупреждений: ", rep.warns)
+	fmt.Println("* Уведомлений:    ", rep.notes)
 }

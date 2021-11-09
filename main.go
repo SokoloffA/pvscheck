@@ -5,10 +5,29 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/jessevdk/go-flags"
+	"github.com/docopt/docopt-go"
 )
 
-const AppVersion = "0.17"
+const AppVersion = "0.18"
+
+const description = `
+The pvscheck tool checks C & C++ projects using the pvs-studio utility..
+`
+
+const usage = `
+Usage:
+  pvscheck [options]
+
+Options:
+  -f --force            Rebuild a project from scratch
+  --report              Create a report for a previously analysed project.
+  --suppress 	        Suppressing all analyzer warnings
+  --info                Show the information about project and exit
+  -v --verbose          Show compiler output
+  -h --help             Show this screen.
+  --version             Show version of the program and PVS utilities.
+  --config=CONFIGFILE   Use alternate configuration file 
+`
 
 const (
 	RetArgsParseError = 1
@@ -16,73 +35,118 @@ const (
 	RetExecNotFound   = 3
 )
 
-var argv Args
+// func processErrors() {
+// 	r := recover()
+// 	if r == nil {
+// 		return
+// 	}
+
+// 	if execErr, ok := r.(*exec.Error); ok && execErr.Err == exec.ErrNotFound {
+// 		fmt.Printf("%s command not found, it looks like the program is not installed\n", execErr.Name)
+// 		os.Exit(RetExecNotFound)
+// 	}
+
+// 	fmt.Println(r)
+// 	os.Exit(RetCommandError)
+// }
+
+// func run(command flags.Commander, args []string) error {
+// 	defer processErrors()
+
+// 	if err := command.Execute(args); err != nil {
+// 		panic(err)
+// 	}
+// 	return nil
+// }
 
 type Args struct {
-	Check      CheckArgs    `command:"check" description:"check the project, this command is executed if no other is specified"`
-	ReportArgs ReportArgs   `command:"report" description:"create a report for a previously analysed project."`
-	Suppress   SuppressArgs `command:"suppress" description:"suppressing all analyzer warnings"`
-	Info       InfoArgs     `command:"info" description:"show the information"`
-	Version    VersionArgs  `command:"version" alias:"ver" description:"show the version of the program and PVS utilities"`
-
-	Verbose bool `short:"v" long:"verbose" description:"show compiler output"`
-}
-
-type CommandArgs struct {
-	Pos struct {
-		Directory string `positional-arg-name:"PROJECT DIRECTORY"`
-	} `positional-args:"yes"`
-}
-
-func processErrors() {
-	r := recover()
-	if r == nil {
-		return
-	}
-
-	if execErr, ok := r.(*exec.Error); ok && execErr.Err == exec.ErrNotFound {
-		fmt.Printf("%s command not found, it looks like the program is not installed\n", execErr.Name)
-		os.Exit(RetExecNotFound)
-	}
-
-	fmt.Println(r)
-	os.Exit(RetCommandError)
-}
-
-func run(command flags.Commander, args []string) error {
-	defer processErrors()
-
-	if err := command.Execute(args); err != nil {
-		panic(err)
-	}
-	return nil
+	Report   bool
+	Suppress bool
+	Info     bool
+	Verbose  bool
+	Version  bool
+	Force    bool
+	Config   string
 }
 
 func main() {
+	args := Args{}
 
-	parser := flags.NewParser(&argv, flags.PassDoubleDash|flags.HelpFlag)
-	parser.CommandHandler = run
+	{
+		parser := docopt.Parser{}
+		opts, _ := parser.ParseArgs(description+usage, os.Args[1:], "") // AppVersion)
 
-	_, err := parser.Parse()
-
-	// We use "check" as default command .............
-	/*
-		if err != nil {
-			fmt.Println("......................")
+		if err := opts.Bind(&args); err != nil {
 			fmt.Println(err)
-			fmt.Println("......................")
-			//if flagsErr, ok := err.(*flags.Error); ok {
-			//if flagsErr.Type == flags.ErrCommandRequired || flagsErr.Type == flags.ErrUnknownFlag {
-			args := os.Args
-			args[0] = "check"
-			_, err = parser.ParseArgs(args)
-			//}
-			//}
+			parser.HelpHandler(err, usage)
+			os.Exit(RetArgsParseError)
 		}
-	*/
+	}
+
+	if args.Version {
+		showVersion()
+		return
+	}
+
+	var err error
+	{
+		chk := Checker{args: args}
+		err = chk.run()
+	}
+
+	//engine, err := newEngine(args.Input_bundle[0], args.Input_bundle[1], args.Output_bundle)
+	//if err != nil {
+	//fmt.Fprintln(os.Stderr, err)
+	//os.Exit(RetArgsParseError)
+	//}
+
+	//engine.verbose = args.Verbose
+
+	//err = engine.run()
+	//if err != nil {
+	//fmt.Fprintln(os.Stderr, "Error: ", err)
+	//os.Exit(RetArgsParseError)
+	//}
+
+	// parser := flags.NewParser(&argv, flags.PassDoubleDash|flags.HelpFlag)
+	// parser.CommandHandler = run
+
+	// _, err := parser.Parse()
+
+	// // We use "check" as default command .............
+	// /*
+	// 	if err != nil {
+	// 		fmt.Println("......................")
+	// 		fmt.Println(err)
+	// 		fmt.Println("......................")
+	// 		//if flagsErr, ok := err.(*flags.Error); ok {
+	// 		//if flagsErr.Type == flags.ErrCommandRequired || flagsErr.Type == flags.ErrUnknownFlag {
+	// 		args := os.Args
+	// 		args[0] = "check"
+	// 		_, err = parser.ParseArgs(args)
+	// 		//}
+	// 		//}
+	// 	}
+	// */
 
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(RetArgsParseError)
 	}
+}
+
+func showVersion() error {
+	fmt.Printf("pvscheck   %s\n", AppVersion)
+	cmd := exec.Command("pvs-studio", "--version")
+	cmd.Stdout = os.Stdout
+	return cmd.Run()
+}
+
+func fileExists(name string) bool {
+	if _, err := os.Stat(name); err != nil {
+		if os.IsNotExist(err) {
+			return false
+		}
+	}
+	return true
 }
