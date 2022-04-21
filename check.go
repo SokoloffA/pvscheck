@@ -165,7 +165,7 @@ func (checker Checker) analyze() error {
 		"-j", fmt.Sprintf("%d", checker.cfg.PvsThreads),
 		"--cfg", checker.proj.TmpCfgFile,
 		//#"--incremental",
-		"--disableLicenseExpirationCheck",
+		//"--disableLicenseExpirationCheck",
 		"-o", checker.proj.LogFile,
 	)
 }
@@ -183,10 +183,11 @@ func (c Checker) convert() error {
 
 	return runWithProgress("Report", c.args.Verbose,
 		"plog-converter",
-		"-a", c.cfg.pvsLevels(),
-		"-s", c.proj.TmpCfgFile,
-		"--renderTypes=tasklist",
-		"-o", c.proj.TasksFile,
+		"-a", c.cfg.pvsLevels(), // Specifies analyzer(s) and level(s) to be used for filtering
+		"-s", c.proj.TmpCfgFile, // Path to PVS-Studio settings file.
+		"-r", ".", // A path to the project directory.
+		"-t", "tasklist", //  Render types for output.
+		"-o", c.proj.TasksFile, // Output file.
 		c.proj.LogFile,
 	)
 }

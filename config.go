@@ -10,8 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const defaultConfigYml = `
-PvsThreads: 4
+const defaultConfigYml = `PvsThreads: 4
 BuildThreads: 4
 
 # Specifies analyzer(s) and level(s) to be used for filtering, i.e.
@@ -62,6 +61,8 @@ type ConfigLevels struct {
 	MISRA         int `yaml:"MISRA"`
 }
 
+const DefaultConfigFile = ".pvscheck.yml"
+
 type ConfigCheck string
 
 func defaultConfig() (Config, error) {
@@ -100,7 +101,7 @@ func findConfigFiles(projectDir string) ([]string, error) {
 	path := strings.Split(dir, "/")
 
 	for len(path) > 0 {
-		f := strings.Join(path, "/") + ".pvscheck.yml"
+		f := strings.Join(path, "/") + DefaultConfigFile
 		if fileExists(f) {
 			res = append(res, f)
 		}

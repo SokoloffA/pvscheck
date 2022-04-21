@@ -5,7 +5,7 @@ INSTALL_PREFIX ?= /usr/local
 help:
 	@echo "  Usage: make"
 	@echo "  Usage: make install"
-	@echo "  Usage: make install [INSTALL_PREFIX=~/bin]"
+	@echo "  Usage: make install [INSTALL_PREFIX=$(INSTALL_PREFIX)]"
 
 .PHONY: pvscheck
 pvscheck:
@@ -13,6 +13,6 @@ pvscheck:
 
 install: pvscheck
 	@echo Installing into $(INSTALL_PREFIX)
-	@install -m 577 pvscheck ${INSTALL_PREFIX}
+	@install -m 755 pvscheck ${INSTALL_PREFIX}
 
 

@@ -54,7 +54,7 @@ func newProject(dir string) (Project, error) {
 	dir1 := filepath.Base(filepath.Dir(res.ProjectDir))
 	dir2 := filepath.Base(res.ProjectDir)
 	hash := md5.Sum([]byte(res.ProjectDir))
-	res.BuildDir = fmt.Sprintf("%spvs-%s-%s_[%x]", os.TempDir(), dir1, dir2, hash)
+	res.BuildDir = fmt.Sprintf("%s/pvs-%s-%s_%x", os.TempDir(), dir1, dir2, hash)
 
 	res.DataDir = res.BuildDir + "/.PVS-Studio"
 	res.TmpCfgFile = res.DataDir + "/pvscheck.cfg"
