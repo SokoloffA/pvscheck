@@ -20,7 +20,7 @@ func (c *Checker) run() error {
 
 	c.proj = proj
 
-	c.cfg, err = loadConfig(c.proj.ProjectDir)
+	err = c.cfg.load(c.proj.ConfigFile)
 	if err != nil {
 		return err
 	}
@@ -164,8 +164,9 @@ func (checker Checker) analyze() error {
 		"analyze",
 		"-j", fmt.Sprintf("%d", checker.cfg.PvsThreads),
 		"--cfg", checker.proj.TmpCfgFile,
-		//#"--incremental",
+		"--incremental",
 		//"--disableLicenseExpirationCheck",
+		"-R", checker.proj.TmpRulesFile,
 		"-o", checker.proj.LogFile,
 	)
 }

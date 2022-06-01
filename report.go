@@ -50,6 +50,11 @@ func saveReport(inFile, outFile string) (ReportInfo, error) {
 			continue
 		}
 
+		// Workaround for https://github.com/viva64/pvs-studio-cmake-examples/issues/18
+		if strings.Contains(line, "V1042") {
+			continue
+		}
+
 		if strings.Contains(line, "\terr\t") {
 			res.errs += 1
 		}

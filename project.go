@@ -26,6 +26,7 @@ type Project struct {
 	LogFile      string
 	TasksFile    string
 	OutFile      string
+	ConfigFile   string
 }
 
 func newProject(dir string) (Project, error) {
@@ -62,6 +63,11 @@ func newProject(dir string) (Project, error) {
 	res.LogFile = res.DataDir + "/PVS.log"
 	res.TasksFile = res.DataDir + "/PVS.tasks"
 	res.OutFile = res.ProjectDir + "/PVS.tasks"
+
+	res.ConfigFile, err = res.findConfigFile()
+	if err != nil {
+		return res, err
+	}
 
 	return res, nil
 }
@@ -124,4 +130,33 @@ func findSrcProject(dir string) (string, ProjectType, error) {
 	}
 
 	return "", UnknownProjectType, fmt.Errorf("the project directory was not found or has an unknown type")
+}
+
+// Search configuration file .pvscheck.yml starting from the project
+// directory and up to the root of the disk.
+// If none is found, returns the standard user config file ~/.config/PVS-Studio/pvscheck.yml
+func (p Project) findConfigFile() (string, error) {
+	var err error
+	dir, err := filepath.Abs(p.ProjectDir)
+	if err != nil {
+		return "", err
+	}
+
+	path := strings.Split(dir, "/")
+
+	for len(path) > 0 {
+		f := strings.Join(path, "/") + DefaultConfigFile
+		if fileExists(f) {
+			return f, nil
+		}
+
+		path = path[:len(path)-1]
+	}
+
+	file := os.Getenv("HOME") + "/.config/PVS-Studio/pvscheck.yml"
+	if fileExists(file) {
+		return file, nil
+	}
+
+	return "", nil
 }

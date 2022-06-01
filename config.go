@@ -1,10 +1,7 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -79,6 +76,7 @@ func defaultConfig() (Config, error) {
 func (c *Config) load(fileName string) error {
 
 	f, err := ioutil.ReadFile(fileName)
+
 	if err != nil {
 		return err
 	}
@@ -88,61 +86,6 @@ func (c *Config) load(fileName string) error {
 	}
 
 	return nil
-}
-
-func findConfigFiles(projectDir string) ([]string, error) {
-	var err error
-	dir, err := filepath.Abs(projectDir)
-	if err != nil {
-		return []string{}, err
-	}
-
-	res := []string{}
-	path := strings.Split(dir, "/")
-
-	for len(path) > 0 {
-		f := strings.Join(path, "/") + DefaultConfigFile
-		if fileExists(f) {
-			res = append(res, f)
-		}
-
-		path = path[:len(path)-1]
-	}
-
-	return res, nil
-}
-
-func loadConfig(projectDir string) (Config, error) {
-	files, err := findConfigFiles(projectDir)
-	if err != nil {
-		return Config{}, err
-	}
-
-	{
-		file := os.Getenv("HOME") + "/.config/PVS-Studio/pvscheck.yml"
-		if fileExists(file) {
-			files = append(files, file)
-		}
-	}
-
-	if len(files) == 0 {
-		fmt.Println("The default config is used")
-		return defaultConfig()
-	}
-
-	res := Config{}
-	fmt.Println(files[0], " config file is used")
-	res.load(files[0])
-	//	cfg, err := ini.Load(fileName)
-	//if err != nil {
-	//return res, err
-	//}
-
-	//if err = cfg.MapTo(&res); err != nil {
-	//return res, err
-	//}
-
-	return res, nil
 }
 
 /* **********************************************
