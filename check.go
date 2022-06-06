@@ -159,16 +159,31 @@ func (checker Checker) analyze() error {
 		return err
 	}
 
-	return runWithProgress("Analyzing", checker.args.Verbose,
+	// logFileBak := checker.proj.LogFile + ".bak"
+	// if fileExists(checker.proj.LogFile) {
+	// 	copyFile(checker.proj.LogFile, logFileBak)
+	// }
+
+	res := runWithProgress("Analyzing", checker.args.Verbose,
 		"pvs-studio-analyzer",
 		"analyze",
 		"-j", fmt.Sprintf("%d", checker.cfg.PvsThreads),
 		"--cfg", checker.proj.TmpCfgFile,
-		"--incremental",
+		//"--incremental",
 		//"--disableLicenseExpirationCheck",
 		"-R", checker.proj.TmpRulesFile,
 		"-o", checker.proj.LogFile,
 	)
+
+	if res != nil {
+		return res
+	}
+
+	// if !fileExists(checker.proj.LogFile) {
+	// 	res = copyFile(logFileBak, checker.proj.LogFile)
+	// }
+
+	return res
 }
 
 func (c Checker) convert() error {

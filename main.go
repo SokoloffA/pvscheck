@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -9,7 +10,7 @@ import (
 	"github.com/docopt/docopt-go"
 )
 
-const AppVersion = "0.20"
+const AppVersion = "0.21"
 
 const description = `
 The pvscheck tool checks C & C++ projects using the pvs-studio utility..
@@ -135,6 +136,24 @@ func fileExists(name string) bool {
 	return true
 }
 
+func copyFile(src string, dest string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, in)
+
+	return err
+}
+
 func runShowVersion() error {
 	fmt.Printf("pvscheck   %s\n", AppVersion)
 	cmd := exec.Command("pvs-studio", "--version")
@@ -179,8 +198,9 @@ func runInfo(args Args) error {
 	fmt.Println("*****************************")
 	fmt.Println("Project dir: ", proj.ProjectDir)
 	fmt.Println("Project type:", projectType)
-	fmt.Println("OutFile:     ", proj.OutFile)
-
+	fmt.Println("Output file: ", proj.OutFile)
+	fmt.Println("Config file: ", proj.ConfigFile)
+	fmt.Println("")
 	fmt.Println("Build dir:   ", proj.BuildDir)
 	if args.Verbose {
 		fmt.Println("...........................")
