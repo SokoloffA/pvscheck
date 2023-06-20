@@ -10,7 +10,7 @@ import (
 	"github.com/docopt/docopt-go"
 )
 
-const AppVersion = "0.21"
+const AppVersion = "0.22"
 
 const description = `
 The pvscheck tool checks C & C++ projects using the pvs-studio utility..

@@ -193,7 +193,7 @@ func (c Checker) convert() error {
 	}
 	defer os.Chdir(cur)
 
-	if err := os.Chdir(c.proj.BuildDir); err != nil {
+	if err := os.Chdir(c.proj.ProjectDir); err != nil {
 		return err
 	}
 
