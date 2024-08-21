@@ -1,16 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/docopt/docopt-go"
 )
 
-const AppVersion = "0.22"
+const AppVersion = "0.23"
 
 const description = `
 The pvscheck tool checks C & C++ projects using the pvs-studio utility..
@@ -40,9 +41,10 @@ Options:
 `
 
 const (
-	RetArgsParseError = 1
-	RetCommandError   = 2
-	RetExecNotFound   = 3
+	RetArgsParseError   = 1
+	RetCommandError     = 2
+	RetExecNotFound     = 3
+	RetLicenseIsExpired = 4
 )
 
 // func processErrors() {
@@ -103,28 +105,34 @@ func main() {
 			fmt.Fprintln(os.Stderr, "Error:", err)
 			os.Exit(RetCommandError)
 		}
-
-		os.Exit(0)
 	}
 
 	if args.Version {
 		handleError(runShowVersion())
-		return
+		os.Exit(0)
 	}
 
 	if args.Init {
 		handleError(runInitConfig(args))
-		return
+		os.Exit(0)
 	}
 
 	if args.Info {
 		handleError(runInfo(args))
-		return
+		os.Exit(0)
+	}
+
+	licenseOK, err := checkLicense()
+	handleError(err)
+
+	if !licenseOK {
+		fmt.Fprintln(os.Stderr, "ERROR: Your license is expired!")
+		os.Exit(RetLicenseIsExpired)
 	}
 
 	chk := Checker{args: args}
 	handleError(chk.run())
-
+	os.Exit(0)
 }
 
 func fileExists(name string) bool {
@@ -158,7 +166,23 @@ func runShowVersion() error {
 	fmt.Printf("pvscheck   %s\n", AppVersion)
 	cmd := exec.Command("pvs-studio", "--version")
 	cmd.Stdout = os.Stdout
-	return cmd.Run()
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	licenseOK, err := checkLicense()
+	if err != nil {
+		return err
+	}
+
+	if licenseOK {
+		fmt.Println("License is valid")
+	} else {
+		fmt.Println("License is expired!")
+	}
+
+	return nil
 }
 
 func runInitConfig(args Args) error {
@@ -171,7 +195,7 @@ func runInitConfig(args Args) error {
 		return fmt.Errorf("file '%s' already exists", fileName)
 	}
 
-	err := ioutil.WriteFile(fileName, []byte(defaultConfigYml), 0644)
+	err := os.WriteFile(fileName, []byte(defaultConfigYml), 0644)
 	if err != nil {
 		return fmt.Errorf("can't writre '%s' file: %s", fileName, err)
 	}
@@ -213,4 +237,27 @@ func runInfo(args Args) error {
 	fmt.Println("*****************************")
 
 	return nil
+}
+
+func checkLicense() (bool, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return false, err
+	}
+
+	cmd := exec.Command("pvs-studio", "--license-info", home+"/.config/PVS-Studio/PVS-Studio.lic")
+	var buf bytes.Buffer
+	cmd.Stdout = &buf
+	cmd.Stderr = os.Stderr
+
+	err = cmd.Run()
+	if err != nil {
+		return false, err
+	}
+
+	if strings.Contains(buf.String(), "expired") {
+		return false, nil
+	}
+
+	return false, nil
 }
